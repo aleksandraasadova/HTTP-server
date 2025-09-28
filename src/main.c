@@ -1,6 +1,6 @@
 #include <errno.h>
 #include <netinet/in.h>
-#include <netinet/ip.h>
+#include <netinet/ip.h>  // структура адреса сокетаsockaddr_in
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,9 +56,18 @@ int main() {
   printf("Waiting for a client to connect...\n");
   client_addr_len = sizeof(client_addr);
 
-  accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
+  int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
+  if (client_fd == -1) {
+    printf("Accept failed: %s\n", strerror(errno));
+    close(server_fd);
+    return 1;
+  }
+  
   printf("Client connected\n");
 
+  send(client_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
+
+  close(client_fd);
   close(server_fd);
 
   return 0;

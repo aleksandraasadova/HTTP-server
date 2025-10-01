@@ -1,3 +1,4 @@
+/* iterative server*/
 #include <errno.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>  // структура адреса сокетаsockaddr_in
@@ -6,6 +7,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <arpa/inet.h> // определить ip-адрес и порт в удобном формате
 
 int main() {
   // Disable output buffering
@@ -42,6 +44,7 @@ int main() {
       .sin_addr = {htonl(INADDR_ANY)},
   };
 
+
   if (bind(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != 0) {
     printf("Bind failed: %s \n", strerror(errno));
     return 1;
@@ -62,11 +65,29 @@ int main() {
     close(server_fd);
     return 1;
   }
-  
   printf("Client connected\n");
+  /*
+  char *client_ip = inet_ntoa(client_addr.sin_addr);
+  int client_port = ntohs(client_addr.sin_port);
+  printf("Client IP: %s\nClient Port: %d\n", client_ip, client_port);
+*/
 
-  send(client_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
+  char buffer[4024];
+  int nbytes = read(client_fd, buffer, sizeof(buffer) - 1);
 
+  if (nbytes > 0) {
+    buffer[nbytes] = '\0';   // превращаем в C-строку
+    char *find = "GET / HTTP/1.1";
+    if (strncmp(buffer, find, strlen(find)) == 0) {
+      char reply[] = "HTTP/1.1 200 OK\r\n\r\n";
+      send(client_fd, reply, strlen(reply), 0);
+    } else {
+      char reply[] = "HTTP/1.1 404 Not Found\r\n\r\n";
+      send(client_fd, reply, strlen(reply), 0);
+    }
+  }
+
+  sleep(10);
   close(client_fd);
   close(server_fd);
 

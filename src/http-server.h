@@ -11,6 +11,8 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <stdlib.h>
 
 #define MAX_HEADERS 32
 
@@ -28,5 +30,9 @@ typedef struct {
 } http_request;
 
 int server_init(int *server_fd);
+void *handle_client_thread(void *arg);
+void handle_client(int client_fd);
+void parse_request(const int client_fd, http_request *request);
+void send_response(const int client_fd, const http_request *request);
 
 #endif
